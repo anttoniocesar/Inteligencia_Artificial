@@ -1,0 +1,6 @@
+**/modelo_sentence_transformer_multilingual/
+*.sqlite3
+chroma_db/
+*.bin
+691c3dfb-300f-4285-9f7a-bb8ebbf043ff/
+__pycache__/**/

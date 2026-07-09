@@ -32,9 +32,16 @@ O arquivo `plataforma_grafico.html` abre uma página no navegador com:
 - o gráfico na parte superior;
 - campos visíveis para preencher os valores do eixo X e do eixo Y;
 - preenchimento de vários pontos, usando um valor por linha em cada campo;
-- botão **Gerar gráfico** para redesenhar o gráfico com os dados informados.
+- botão **Gerar gráfico e salvar** para redesenhar o gráfico e guardar os dados no banco local do navegador;
+- botão **Limpar dados salvos** para apagar os valores guardados.
 
 Para usar, abra `Graficos_Estoque/plataforma_grafico.html` no navegador.
+
+### Banco de dados local
+
+A versão HTML salva os pontos no `localStorage` do navegador, que funciona como um banco de dados local simples. Assim, ao abrir a página novamente no mesmo navegador, os últimos valores salvos são carregados automaticamente.
+
+Se você precisar de um banco de dados real compartilhado entre computadores ou usuários, será necessário criar um backend, por exemplo com Python/Flask e SQLite.
 
 ## Plataforma em Python opcional
 

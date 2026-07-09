@@ -127,6 +127,12 @@
       font-weight: 700;
     }
 
+    .status-banco {
+      min-height: 20px;
+      color: #047857;
+      font-weight: 700;
+    }
+
     @media (max-width: 640px) {
       .campos-entrada {
         grid-template-columns: 1fr;
@@ -182,10 +188,12 @@
         <p class="ajuda">Preencha um ponto por linha. A primeira linha do eixo X será combinada com a primeira linha do eixo Y, e assim por diante.</p>
 
         <div class="acoes">
-          <button type="submit" class="botao-principal">Gerar gráfico</button>
+          <button type="submit" class="botao-principal">Gerar gráfico e salvar</button>
+          <button type="button" class="botao-secundario" id="limpar-banco">Limpar dados salvos</button>
         </div>
 
         <div id="mensagem-erro" class="erro" aria-live="polite"></div>
+        <div id="mensagem-banco" class="status-banco" aria-live="polite"></div>
       </form>
     </section>
   </main>
@@ -198,11 +206,15 @@
     const MARGEM_SUPERIOR = 48;
     const MARGEM_INFERIOR = 42;
 
+    const CHAVE_BANCO_LOCAL = 'grafico_estoque_pontos';
+
     const grafico = document.querySelector('#grafico');
     const formulario = document.querySelector('#formulario-pontos');
     const campoEixoX = document.querySelector('#campo-eixo-x');
     const campoEixoY = document.querySelector('#campo-eixo-y');
+    const botaoLimparBanco = document.querySelector('#limpar-banco');
     const mensagemErro = document.querySelector('#mensagem-erro');
+    const mensagemBanco = document.querySelector('#mensagem-banco');
 
     function criarElementoSvg(nome, atributos = {}) {
       const elemento = document.createElementNS('http://www.w3.org/2000/svg', nome);
@@ -337,6 +349,32 @@
       grafico.appendChild(textoAnos);
     }
 
+    function salvarNoBancoLocal(dados) {
+      localStorage.setItem(CHAVE_BANCO_LOCAL, JSON.stringify(dados));
+      mensagemBanco.textContent = 'Dados salvos no banco local do navegador.';
+    }
+
+    function carregarDoBancoLocal() {
+      const dadosSalvos = localStorage.getItem(CHAVE_BANCO_LOCAL);
+      if (!dadosSalvos) return false;
+
+      try {
+        const dados = JSON.parse(dadosSalvos);
+        campoEixoX.value = dados.map((ponto) => ponto.x).join('\n');
+        campoEixoY.value = dados.map((ponto) => ponto.y).join('\n');
+        mensagemBanco.textContent = 'Dados carregados do banco local do navegador.';
+        return true;
+      } catch {
+        localStorage.removeItem(CHAVE_BANCO_LOCAL);
+        return false;
+      }
+    }
+
+    function limparBancoLocal() {
+      localStorage.removeItem(CHAVE_BANCO_LOCAL);
+      mensagemBanco.textContent = 'Dados salvos foram apagados do banco local.';
+    }
+
     function separarValores(texto) {
       return texto
         .split(/[\n,;]+/)
@@ -365,9 +403,15 @@
       const erro = validarDados();
       mensagemErro.textContent = erro;
       if (erro) return;
-      gerarGrafico(obterDadosDoFormulario());
+
+      const dados = obterDadosDoFormulario();
+      gerarGrafico(dados);
+      salvarNoBancoLocal(dados);
     });
 
+    botaoLimparBanco.addEventListener('click', limparBancoLocal);
+
+    carregarDoBancoLocal();
     gerarGrafico(obterDadosDoFormulario());
   </script>
 </body>

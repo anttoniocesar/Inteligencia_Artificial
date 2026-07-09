@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plataforma de Gráfico de Estoque</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Arial, Helvetica, sans-serif;
+      --azul: #005f99;
+      --cinza: #3f3f3f;
+      --borda: #1f1f1f;
+      --fundo: #f4f7fb;
+    }
+
+    body {
+      margin: 0;
+      background: var(--fundo);
+      color: #1f2933;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .descricao {
+      margin: 0 0 20px;
+      color: #52606d;
+    }
+
+    .cartao {
+      background: #ffffff;
+      border: 1px solid #d9e2ec;
+      border-radius: 14px;
+      box-shadow: 0 10px 24px rgb(15 23 42 / 8%);
+      padding: 18px;
+    }
+
+    .grafico-area {
+      overflow-x: auto;
+      padding: 12px 6px 2px;
+    }
+
+    #grafico {
+      min-width: 640px;
+    }
+
+    form {
+      margin-top: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .campos-entrada {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    textarea {
+      border: 1px solid #bcccdc;
+      border-radius: 9px;
+      font: inherit;
+      line-height: 1.4;
+      padding: 10px 12px;
+      resize: vertical;
+    }
+
+    .ajuda {
+      color: #52606d;
+      margin: 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      padding: 11px 14px;
+    }
+
+    .acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .botao-principal {
+      background: var(--azul);
+      color: #ffffff;
+    }
+
+    .botao-secundario {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .erro {
+      min-height: 20px;
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .campos-entrada {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Gráfico de estoque</h1>
+    <p class="descricao">Informe os valores do eixo X e do eixo Y para gerar o gráfico com seus próprios pontos.</p>
+
+    <section class="cartao" aria-label="Gerador de gráfico">
+      <div class="grafico-area">
+        <svg id="grafico" xmlns="http://www.w3.org/2000/svg" width="640" height="185" viewBox="0 0 640 185" role="img" aria-label="Gráfico de estoque gerado"></svg>
+      </div>
+
+      <form id="formulario-pontos">
+        <div class="campos-entrada">
+          <label>
+            Eixo X
+            <textarea id="campo-eixo-x" rows="6" placeholder="Digite um valor por linha. Ex.: 1&#10;2&#10;3" required>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12</textarea>
+          </label>
+          <label>
+            Eixo Y
+            <textarea id="campo-eixo-y" rows="6" placeholder="Digite um valor por linha. Ex.: 3&#10;2&#10;4" required>3
+2
+4
+2
+4
+5
+6
+1
+2
+4
+1
+5</textarea>
+          </label>
+        </div>
+
+        <p class="ajuda">Preencha um ponto por linha. A primeira linha do eixo X será combinada com a primeira linha do eixo Y, e assim por diante.</p>
+
+        <div class="acoes">
+          <button type="submit" class="botao-principal">Gerar gráfico</button>
+        </div>
+
+        <div id="mensagem-erro" class="erro" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const LARGURA = 640;
+    const ALTURA = 185;
+    const MARGEM_ESQUERDA = 40;
+    const MARGEM_DIREITA = 20;
+    const MARGEM_SUPERIOR = 48;
+    const MARGEM_INFERIOR = 42;
+
+    const grafico = document.querySelector('#grafico');
+    const formulario = document.querySelector('#formulario-pontos');
+    const campoEixoX = document.querySelector('#campo-eixo-x');
+    const campoEixoY = document.querySelector('#campo-eixo-y');
+    const mensagemErro = document.querySelector('#mensagem-erro');
+
+    function criarElementoSvg(nome, atributos = {}) {
+      const elemento = document.createElementNS('http://www.w3.org/2000/svg', nome);
+      Object.entries(atributos).forEach(([chave, valor]) => elemento.setAttribute(chave, valor));
+      return elemento;
+    }
+
+    function definirCorFundo(item, media) {
+      if (item < media) return '#d9f2df';
+      if (item === media) return '#fff1c7';
+      return '#f5cccc';
+    }
+
+    function converterX(indice, larguraUtil, totalPontos) {
+      const larguraFaixa = larguraUtil / totalPontos;
+      return MARGEM_ESQUERDA + (indice + 0.5) * larguraFaixa;
+    }
+
+    function converterY(item, maiorItem, alturaUtil) {
+      return MARGEM_SUPERIOR + alturaUtil - (item / maiorItem) * alturaUtil;
+    }
+
+    function gerarGrafico(dados) {
+      grafico.replaceChildren();
+
+      const totalPontos = dados.length;
+      const larguraUtil = LARGURA - MARGEM_ESQUERDA - MARGEM_DIREITA;
+      const alturaUtil = ALTURA - MARGEM_SUPERIOR - MARGEM_INFERIOR;
+      const larguraFaixa = larguraUtil / totalPontos;
+      const soma = dados.reduce((total, ponto) => total + ponto.y, 0);
+      const media = soma / totalPontos;
+      const maiorItem = Math.max(...dados.map((ponto) => ponto.y), 1);
+      const yMedia = converterY(media, maiorItem, alturaUtil);
+
+      grafico.appendChild(criarElementoSvg('rect', { width: '100%', height: '100%', fill: 'white' }));
+
+      dados.forEach((ponto, indice) => {
+        const x = MARGEM_ESQUERDA + indice * larguraFaixa;
+        grafico.appendChild(criarElementoSvg('rect', {
+          x: x.toFixed(2),
+          y: MARGEM_SUPERIOR,
+          width: larguraFaixa.toFixed(2),
+          height: alturaUtil,
+          fill: definirCorFundo(ponto.y, media),
+        }));
+      });
+
+      dados.forEach((ponto, indice) => {
+        const x = converterX(indice, larguraUtil, totalPontos);
+        grafico.appendChild(criarElementoSvg('line', {
+          x1: x.toFixed(2),
+          y1: MARGEM_SUPERIOR,
+          x2: x.toFixed(2),
+          y2: MARGEM_SUPERIOR + alturaUtil,
+          stroke: '#9e9e9e',
+          'stroke-dasharray': '5 3',
+          opacity: '0.55',
+        }));
+
+        const texto = criarElementoSvg('text', {
+          x: x.toFixed(2),
+          y: ALTURA - 15,
+          'text-anchor': 'middle',
+          'font-family': 'Arial',
+          'font-size': '11',
+          'font-weight': 'bold',
+        });
+        texto.textContent = ponto.x;
+        grafico.appendChild(texto);
+      });
+
+      dados.forEach((ponto, indice) => {
+        const x = converterX(indice, larguraUtil, totalPontos);
+        const y = converterY(ponto.y, maiorItem, alturaUtil);
+        grafico.appendChild(criarElementoSvg('circle', {
+          cx: x.toFixed(2),
+          cy: y.toFixed(2),
+          r: ponto.y === media ? '5.8' : '5.2',
+          fill: ponto.y === media ? '#d00000' : '#3f3f3f',
+        }));
+      });
+
+      grafico.appendChild(criarElementoSvg('line', {
+        x1: MARGEM_ESQUERDA,
+        y1: yMedia.toFixed(2),
+        x2: MARGEM_ESQUERDA + larguraUtil,
+        y2: yMedia.toFixed(2),
+        stroke: '#005f99',
+        'stroke-width': '2',
+      }));
+
+      const textoMedia = criarElementoSvg('text', {
+        x: MARGEM_ESQUERDA + larguraUtil - 4,
+        y: (yMedia - 6).toFixed(2),
+        'text-anchor': 'end',
+        'font-family': 'Arial',
+        'font-size': '15',
+        'font-weight': 'bold',
+      });
+      textoMedia.textContent = `Média: ${Number(media.toFixed(2))}`;
+      grafico.appendChild(textoMedia);
+
+      grafico.appendChild(criarElementoSvg('rect', {
+        x: MARGEM_ESQUERDA,
+        y: MARGEM_SUPERIOR,
+        width: larguraUtil,
+        height: alturaUtil,
+        fill: 'none',
+        stroke: 'black',
+        'stroke-width': '1.5',
+      }));
+
+      const textoUnidade = criarElementoSvg('text', {
+        x: '10',
+        y: MARGEM_SUPERIOR + 6,
+        'font-family': 'Arial',
+        'font-size': '11',
+        'font-weight': 'bold',
+      });
+      textoUnidade.textContent = 'und';
+      grafico.appendChild(textoUnidade);
+
+      const textoAnos = criarElementoSvg('text', {
+        x: LARGURA - 12,
+        y: ALTURA - 18,
+        'text-anchor': 'end',
+        'font-family': 'Arial',
+        'font-size': '9',
+        'font-weight': 'bold',
+      });
+      textoAnos.textContent = 'eixo X';
+      grafico.appendChild(textoAnos);
+    }
+
+    function separarValores(texto) {
+      return texto
+        .split(/[\n,;]+/)
+        .map((valor) => valor.trim())
+        .filter((valor) => valor !== '');
+    }
+
+    function obterDadosDoFormulario() {
+      const valoresX = separarValores(campoEixoX.value);
+      const valoresY = separarValores(campoEixoY.value);
+      return valoresX.map((x, indice) => ({ x, y: Number(valoresY[indice]) }));
+    }
+
+    function validarDados() {
+      const valoresX = separarValores(campoEixoX.value);
+      const valoresY = separarValores(campoEixoY.value);
+      if (!valoresX.length || !valoresY.length) return 'Preencha os campos Eixo X e Eixo Y.';
+      if (valoresX.length !== valoresY.length) return 'Os campos Eixo X e Eixo Y precisam ter a mesma quantidade de valores.';
+      if (valoresY.some((valor) => !Number.isFinite(Number(valor)))) return 'Preencha o Eixo Y apenas com números válidos.';
+      if (valoresY.some((valor) => Number(valor) < 0)) return 'Use apenas valores maiores ou iguais a zero no Eixo Y.';
+      return '';
+    }
+
+    formulario.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      const erro = validarDados();
+      mensagemErro.textContent = erro;
+      if (erro) return;
+      gerarGrafico(obterDadosDoFormulario());
+    });
+
+    gerarGrafico(obterDadosDoFormulario());
+  </script>
+</body>
+</html>

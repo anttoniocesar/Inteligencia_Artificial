@@ -15,19 +15,19 @@ Este arquivo serve como documentação do projeto. Ele explica:
 
 Se você quiser apenas gerar o gráfico, use somente o arquivo `grafico_estoque.py`.
 
-## Plataforma em Python
+## Plataforma interativa HTML recomendada
 
-Se você quer executar tudo como arquivo `.py`, use `plataforma_grafico.py`:
+Como você quer trabalhar com HTML, use o arquivo `plataforma_grafico.html`. Ele deve ser aberto no navegador, não executado pelo Python.
 
-```bash
-python Graficos_Estoque/plataforma_grafico.py
+Para usar no Windows, você pode dar dois cliques no arquivo:
+
+```text
+Graficos_Estoque/plataforma_grafico.html
 ```
 
-Esse arquivo abre uma janela com o gráfico em cima, os campos **Eixo X** e **Eixo Y** abaixo e o botão **Gerar gráfico**. Não copie o conteúdo de `plataforma_grafico.html` para um arquivo Python, porque linhas de CSS como `max-width: 980px;` geram `SyntaxError` em Python.
+Ou abrir pelo navegador usando **Arquivo > Abrir arquivo** e selecionar `plataforma_grafico.html`.
 
-## Plataforma interativa
-
-Além do script Python, o arquivo `plataforma_grafico.html` abre uma página no navegador com:
+O arquivo `plataforma_grafico.html` abre uma página no navegador com:
 
 - o gráfico na parte superior;
 - campos visíveis para preencher os valores do eixo X e do eixo Y;
@@ -35,6 +35,10 @@ Além do script Python, o arquivo `plataforma_grafico.html` abre uma página no 
 - botão **Gerar gráfico** para redesenhar o gráfico com os dados informados.
 
 Para usar, abra `Graficos_Estoque/plataforma_grafico.html` no navegador.
+
+## Plataforma em Python opcional
+
+O arquivo `plataforma_grafico.py` fica como alternativa para quem quiser uma janela Tkinter em Python. Para o seu caso, use preferencialmente o `plataforma_grafico.html`.
 
 ## Correção do erro `SyntaxError: invalid syntax`
 
